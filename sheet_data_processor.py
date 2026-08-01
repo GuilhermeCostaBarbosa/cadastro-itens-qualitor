@@ -30,14 +30,42 @@ df_exemplo_dois_itens = pd.DataFrame({
     'caminho_arquivo': ['', '']
     })
 
-# instanciar a classe de automação
-robo = QualitorAutomation()
-robo.login()
+def validar_dados(dados):
+    # Verificar se planilha esta vazia
+    if dados.empty:
+        print('Erro: a planilha anexada está vázia.')
+        return False
 
-for index, linha in df_itens.iterrows():
-    robo.access_item_registration_page()
-    robo.register_new_item(linha)
-    print(f"Item {index + 1} | {linha['descricao_item']} foi registrado com sucesso!")
+    # Verificar se existe colunas obrigatorias
+    col_obrigatorias = ['hub', 'unidade', 'deve_estender', 'unidade_estender', 'tipo_produto', 'item_imobilizado', 'descricao_item', 'unidade_medida_consumo', 'unidade_medida_compra', 'ressuprimento', 'lote', 'material_etiqueta', 'atividade']
+    for col in col_obrigatorias:
+        if col not in dados.columns:
+            print(f'Erro: no arquivo anexado não contem a coluna obrigatória ({col}).')
+            return False
 
-print("Todos os itens foram registrados com sucesso!")
+    # Verificar se tem campos em branco nas colunas obrigatórias
+    for index, linha in dados.iterrows():
+        num_linha = index + 2
+        for col in col_obrigatorias:
+            valor = str(linha[col]).strip()
+            if not valor or valor.lower() in ['nan', 'none', 'null']:
+                print(f'Erro na lina {num_linha}: O campo obrigatório "{col}" está em branco')
+                return False
+            
+    return True
+
+if validar_dados(df_itens):
+    # instanciar a classe de automação
+    robo = QualitorAutomation()
+    robo.login()
+
+    for index, linha in df_itens.iterrows():
+        robo.access_item_registration_page()
+        robo.register_new_item(linha)
+        print(f"Item {index + 1} | {linha['descricao_item']} foi registrado com sucesso!")
+
+    print("Todos os itens foram registrados com sucesso!")
+else:
+    print("Automação cancelada. Por favor, corrija os erros na planilha.")
+    
 # robo.close_browser()
